@@ -6,8 +6,8 @@ def clean_data(trials, info):
     print("Cleaning Data..")
     # select_trials like code
     # collect the non-noise and non-fixation trials: 'cond' > 1
-    pic_info = [d for d in info if (d['firstStimulus'] == 'P' and int(d['cond']) > 1)]
-    sen_info = [d for d in info if (d['firstStimulus'] == 'S' and int(d['cond']) > 1)]
+    pic_info = [d for d in info if (d['firstStimulus'] == 'P' and int(d['cond']) >= 1)]
+    sen_info = [d for d in info if (d['firstStimulus'] == 'S' and int(d['cond']) >= 1)]
 
     pic_data = get_related_trials(pic_info, trials)
     sen_data = get_related_trials(sen_info, trials)
@@ -92,11 +92,56 @@ def data_to_examples(info, data):
 
     for j in range(0, num_trials):
         tmp_data = data[j][:][:int(minTrialLen)]
-        tmp_data = np.reshape(tmp_data, int(num_voxels * minTrialLen));
+        tmp_data = np.reshape(tmp_data, int(num_voxels * minTrialLen))
         examples[j] = tmp_data
 
     # print('Done D2E')
     return examples, labels
 
+
+def clean_data2(trials, info):
+    counts = []
+    print("Cleaning Data..")
+    # select_trials like code
+    # collect the non-noise and non-fixation trials: 'cond' > 1
+    pos_sen = [d for d in info if (d['firstStimulus'] == 'P' and int(d['cond']) == 2)]
+    neg_sen = [d for d in info if (d['firstStimulus'] == 'S' and int(d['cond']) == 3)]
+
+    psen_trials = get_related_trials(pos_sen, trials)
+    nsen_trials = get_related_trials(neg_sen, trials)
+
+    del (info, trials)
+
+    # Trim the data which are just blanks
+    trim_psen = []
+    for item in psen_trials:
+        trim_psen.append(np.concatenate((item[:][1:16], item[:][17:32])))
+
+    del psen_trials
+    p_examples, p_labels = data_to_examples(pos_sen, trim_psen)
+
+    trim_nsen = []
+    for item in nsen_trials:
+        trim_nsen.append(np.concatenate((item[:][1:16], item[:][17:32])))
+
+    del nsen_trials
+    s_examples, s_labels = data_to_examples(neg_sen, trim_nsen)
+
+    examples = []
+    examples.extend(p_examples)
+    examples.extend(s_examples)
+    examples = np.array(examples)
+
+    labels = []
+    labels_p = np.zeros((p_examples.shape[0], 1))
+    labels_s = np.ones((s_examples.shape[0], 1))
+    # labels.extend(p_labels)
+    # labels.extend(s_labels)
+    labels.extend(labels_p)
+    labels.extend(labels_s)
+    labels = np.array(labels).ravel()
+
+    print('Done')
+    return examples, labels
 
 

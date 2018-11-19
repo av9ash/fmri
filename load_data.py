@@ -11,7 +11,10 @@ import numpy as np
 import scrubber
 
 
-def get_raw_data(data_dir, idx):
+def get_raw_data(data_dir, idx, cut):
+    # if len(subject)<=1:
+    #
+    # else
     subject = data_dir.split('/')[2]
     print("Loading data for: ", subject)
 
@@ -38,7 +41,11 @@ def get_raw_data(data_dir, idx):
             trial_data = np.array([i.split(",") for i in trial_data])
             # trial_data.append(open(cwd + "\\info.data").read())
             # trials.append(trial_data)
-            trials.append(trial_data[:, :4633])
+
+            if cut:
+                trials.append(trial_data[:, :4633])
+            else:
+                trials.append(trial_data)
 
             info = {}
             with open(cwd + "\\info.data") as f:
@@ -53,21 +60,14 @@ def get_raw_data(data_dir, idx):
     print("Done!")
     return info_files, trials, meta
 
-  
-def get_subject_data(subjects):
+
+def get_all_subjects_data(subjects):
     cwd = os.getcwd()
-
-    # subjects = ["Data/ExtractedData/Subject_04799/",
-    #                      "Data/ExtractedData/Subject_04820",
-    #                      "Data/ExtractedData/Subject_04847",
-    #                      "Data/ExtractedData/Subject_05680",
-    #                      "Data/ExtractedData/Subject-05710"]
-
     trials_data = []
     info = []
     meta = []
     for subject in subjects:
-        info_files, trial_data, meta_files = get_raw_data(subject, len(trials_data))
+        info_files, trial_data, meta_files = get_raw_data(subject, len(trials_data), True)
         trials_data.extend(trial_data)
         info.extend(info_files)
         meta.extend(meta_files)
@@ -75,3 +75,17 @@ def get_subject_data(subjects):
 
     return scrubber.clean_data(trials_data, info)
 
+
+def get_subject_data(subject):
+    cwd = os.getcwd()
+    trials_data = []
+    info = []
+    meta = []
+
+    info_files, trial_data, meta_files = get_raw_data(subject, len(trials_data), False)
+    trials_data.extend(trial_data)
+    info.extend(info_files)
+    meta.extend(meta_files)
+    os.chdir(cwd)
+
+    return scrubber.clean_data2(trials_data, info)
