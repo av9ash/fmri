@@ -88,4 +88,19 @@ def get_subject_data(subject):
     meta.extend(meta_files)
     os.chdir(cwd)
 
-    return scrubber.clean_data2(trials_data, info)
+    return scrubber.clean_data(trials_data, info)
+
+
+def get_subject_data_sentence(subject):
+    cwd = os.getcwd()
+    trials_data = []
+    info = []
+    meta = []
+
+    info_files, trial_data, meta_files = get_raw_data(subject, len(trials_data), False)
+    trials_data.extend(trial_data)
+    info.extend(info_files)
+    meta.extend(meta_files)
+    os.chdir(cwd)
+
+    return scrubber.clean_data_sen(trials_data, info)

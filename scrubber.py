@@ -6,36 +6,40 @@ def clean_data(trials, info):
     print("Cleaning Data..")
     # select_trials like code
     # collect the non-noise and non-fixation trials: 'cond' > 1
-    pic_info = [d for d in info if (d['firstStimulus'] == 'P' and int(d['cond']) >= 1)]
-    sen_info = [d for d in info if (d['firstStimulus'] == 'S' and int(d['cond']) >= 1)]
+    pic_info = [d for d in info if (d['firstStimulus'] == 'P' and int(d['cond']) > 1)]
+    sen_info = [d for d in info if (d['firstStimulus'] == 'S' and int(d['cond']) > 1)]
 
     pic_data = get_related_trials(pic_info, trials)
     sen_data = get_related_trials(sen_info, trials)
 
-    del (info, trials)
+    del info, trials
 
     # count the number of trials selected from every trial
     # use it later to segregate testing and training data.
-    from collections import defaultdict
-    fq = {'subject': defaultdict(int)}
-    for row in pic_info:
-        for field in fq:
-            fq[field][row[field]] += 1
+    # from collections import defaultdict
+    # fq = {'subject': defaultdict(int)}
+    # for row in pic_info:
+    #     for field in fq:
+    #         fq[field][row[field]] += 1
 
     # Trim the data which are just blanks
+
     trim_pic = []
+    trim_sen = []
+
     for item in pic_data:
-        trim_pic.append(np.concatenate((item[:][1:16], item[:][17:32])))
+        trim_pic.append(item[:][1:16])
+        trim_sen.append(item[:][17:32])
+
+    for item in sen_data:
+        trim_sen.append(item[:][1:16])
+        trim_pic.append(item[:][17:32])
 
     del pic_data
-    p_examples, p_labels = data_to_examples(pic_info, trim_pic)
-
-    trim_sen = []
-    for item in sen_data:
-        trim_sen.append(np.concatenate((item[:][1:16], item[:][17:32])))
-
     del sen_data
-    s_examples, s_labels = data_to_examples(sen_info, trim_sen)
+
+    p_examples, p_labels = data_to_examples(pic_info+sen_info, trim_pic)
+    s_examples, s_labels = data_to_examples(sen_info+pic_info, trim_sen)
 
     examples = []
     examples.extend(p_examples)
@@ -52,7 +56,7 @@ def clean_data(trials, info):
     labels = np.array(labels).ravel()
 
     print('Done')
-    return examples, labels, fq
+    return examples, labels     # ,fq
 
 
 def get_related_trials(info, trials):
@@ -99,33 +103,32 @@ def data_to_examples(info, data):
     return examples, labels
 
 
-def clean_data2(trials, info):
+def clean_data_sen(trials, info):
     counts = []
     print("Cleaning Data..")
     # select_trials like code
     # collect the non-noise and non-fixation trials: 'cond' > 1
-    pos_sen = [d for d in info if (d['firstStimulus'] == 'P' and int(d['cond']) == 2)]
-    neg_sen = [d for d in info if (d['firstStimulus'] == 'S' and int(d['cond']) == 3)]
+    pos_sen = [d for d in info if int(d['cond']) == 2]
+    neg_sen = [d for d in info if int(d['cond']) == 3]
 
     psen_trials = get_related_trials(pos_sen, trials)
     nsen_trials = get_related_trials(neg_sen, trials)
 
     del (info, trials)
 
-    # Trim the data which are just blanks
     trim_psen = []
-    for item in psen_trials:
-        trim_psen.append(np.concatenate((item[:][1:16], item[:][17:32])))
-
-    del psen_trials
-    p_examples, p_labels = data_to_examples(pos_sen, trim_psen)
-
     trim_nsen = []
-    for item in nsen_trials:
-        trim_nsen.append(np.concatenate((item[:][1:16], item[:][17:32])))
 
-    del nsen_trials
-    s_examples, s_labels = data_to_examples(neg_sen, trim_nsen)
+    for item in psen_trials:
+        trim_psen.append(item[:][1:16])
+        trim_nsen.append(item[:][17:32])
+
+    for item in nsen_trials:
+        trim_nsen.append(item[:][1:16])
+        trim_psen.append(item[:][17:32])
+
+    p_examples, p_labels = data_to_examples(pos_sen + neg_sen, trim_psen)
+    s_examples, s_labels = data_to_examples(neg_sen + pos_sen, trim_nsen)
 
     examples = []
     examples.extend(p_examples)
